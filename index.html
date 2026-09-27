@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>원소 기호 퀴즈</title>
+<style>
+  :root { --ink:#121212; --sub:#5a5a55; --line:#d9d9d4; --ok:#0a7a3d; --okbg:#e3f4ea; --bad:#b3261e; --badbg:#fbe7e5; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#fff; color:var(--ink);
+         font-family:"Pretendard","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:28px 18px 40px; text-align:center; }
+  header { display:flex; justify-content:space-between; align-items:center; font-size:20px; color:var(--sub); font-weight:700; }
+  .symbol { font-size:clamp(96px, 22vw, 180px); font-weight:800; line-height:1; margin:28px 0 8px; }
+  .ask { font-size:24px; color:var(--sub); margin-bottom:24px; }
+  .choices { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .choices button { font:inherit; font-size:clamp(22px, 5vw, 32px); font-weight:700; padding:22px 10px; border-radius:16px;
+                    border:2.5px solid var(--line); background:#fff; color:var(--ink); cursor:pointer; }
+  .choices button.ok  { border-color:var(--ok);  background:var(--okbg);  color:var(--ok); }
+  .choices button.bad { border-color:var(--bad); background:var(--badbg); color:var(--bad); }
+  .choices button:disabled { cursor:default; }
+  .feedback { min-height:44px; font-size:26px; font-weight:800; margin:20px 0 6px; }
+  .feedback.ok { color:var(--ok); } .feedback.bad { color:var(--bad); }
+  .next, .again { font:inherit; font-size:24px; font-weight:800; padding:16px 36px; border-radius:14px; border:0;
+                  background:var(--ink); color:#fff; cursor:pointer; }
+  .result .big { font-size:clamp(72px, 18vw, 140px); font-weight:800; margin:24px 0 4px; }
+  .result p { font-size:24px; color:var(--sub); }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<main>
+  <section id="quiz">
+    <header><span>원소 기호 퀴즈 · 중2 과학</span><span id="progress">1 / 10</span></header>
+    <div class="symbol" id="symbol">Na</div>
+    <div class="ask">이 원소 기호의 이름은?</div>
+    <div class="choices" id="choices"></div>
+    <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+    <button class="next" id="next" hidden>다음 문제</button>
+  </section>
+  <section class="result" id="result" hidden>
+    <header><span>원소 기호 퀴즈 · 중2 과학</span><span>끝!</span></header>
+    <div class="big" id="score">0 / 10</div>
+    <p id="comment"></p>
+    <button class="again" id="again">다시 하기</button>
+  </section>
+</main>
+<script>
+  const ELEMENTS = [
+    ['H','수소'],['He','헬륨'],['Li','리튬'],['Be','베릴륨'],['B','붕소'],['C','탄소'],['N','질소'],
+    ['O','산소'],['F','플루오린'],['Ne','네온'],['Na','나트륨'],['Mg','마그네슘'],['Al','알루미늄'],
+    ['Si','규소'],['P','인'],['S','황'],['Cl','염소'],['Ar','아르곤'],['K','칼륨'],['Ca','칼슘']
+  ];
+  const TOTAL = 10;
+  const $ = (id) => document.getElementById(id);
+  let questions = [], idx = 0, score = 0;
+
+  function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+  function start() {
+    questions = shuffle(ELEMENTS).slice(0, TOTAL);
+    idx = 0; score = 0;
+    $('result').hidden = true; $('quiz').hidden = false;
+    show();
+  }
+
+  function show() {
+    const [sym, name] = questions[idx];
+    $('progress').textContent = (idx + 1) + ' / ' + TOTAL;
+    $('symbol').textContent = sym;
+    $('feedback').textContent = ''; $('feedback').className = 'feedback';
+    $('next').hidden = true;
+    const wrong = shuffle(ELEMENTS.filter(e => e[1] !== name)).slice(0, 3).map(e => e[1]);
+    const box = $('choices'); box.innerHTML = '';
+    shuffle([name, ...wrong]).forEach(opt => {
+      const b = document.createElement('button');
+      b.textContent = opt;
+      b.onclick = () => answer(b, opt === name, name);
+      box.appendChild(b);
+    });
+  }
+
+  function answer(btn, correct, name) {
+    [...$('choices').children].forEach(b => { b.disabled = true; if (b.textContent === name) b.classList.add('ok'); });
+    if (correct) { score++; $('feedback').textContent = '○ 정답!'; $('feedback').className = 'feedback ok'; }
+    else { btn.classList.add('bad'); $('feedback').textContent = '× 정답은 ' + name; $('feedback').className = 'feedback bad'; }
+    $('next').textContent = idx === TOTAL - 1 ? '점수 보기' : '다음 문제';
+    $('next').hidden = false;
+  }
+
+  $('next').onclick = () => { idx++; if (idx < TOTAL) show(); else finish(); };
+  $('again').onclick = start;
+
+  function finish() {
+    $('quiz').hidden = true; $('result').hidden = false;
+    $('score').textContent = score + ' / ' + TOTAL;
+    $('comment').textContent = score >= 9 ? '완벽해요!' : score >= 6 ? '잘했어요. 틀린 것만 한 번 더!' : '한 번 더 해 볼까요?';
+  }
+
+  start();
+</script>
+</body>
+</html>
